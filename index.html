@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+		<link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+		<script type="text/javascript" src="node_modules/xterm-addon-attach/lib/xterm-addon-attach.js"></script>
+		<script type="text/javascript" src="node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+		<script type="text/javascript" src="node_modules/xterm-addon-search/lib/xterm-addon-search.js"></script>
+		<script type="text/javascript" src="node_modules/xterm-addon-web-links/lib/xterm-addon-web-links.js"></script>
+		<script type="text/javascript" src="node_modules/xterm/lib/xterm.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
+		<title>Terminal</title>
+		<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+body {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	font-family: monospace;
+}
+
+#terminal {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+		</style>
+	</head>
+	<body>
+		<div id="terminal"></div>
+		<script type="text/javascript">
+
+class Executable {
+	constructor(name) {
+		this.name = name;
+	}
+
+	exec(linux, args) {
+		let pureArgs = [];
+		let options = [];
+		for (let i = 0; i < args.length; i++) {
+			let arg = args[i];
+			if (arg.startsWith("--"))
+				options.push(arg.substring(2, arg.length));
+			else if (arg.startsWith("-")) {
+				for (let c = 1; c < arg.length; c++)
+					options.push(arg.charAt(c));
+			} else pureArgs.push(arg);
+		}
+		return this.onExec(linux, options, pureArgs);
+	}
+
+	onExec(linux, options, args) {
+		this.output(this.name + ": command not found");
+		return 127;
+	}
+
+	output(msg, newLine = true) {
+		if (newLine)
+			msg += "\r\n";
+		term.write(msg);
+	}
+
+	clear() {
+		term.clear();
+	}
+}
+
+class Help extends Executable {
+	constructor() {
+		super("help");
+	}
+
+	onExec(linux, options, args) {
+		this.output("No help available.");
+		return 0;
+	}
+}
+
+class Clear extends Executable {
+	constructor() {
+		super("clear");
+	}
+
+	onExec(linux, options, args) {
+		super.clear();
+		return 0;
+	}
+}
+
+class Cd extends Executable {
+	constructor() {
+		super("cd");
+	}
+
+	onExec(linux, options, args) {
+		if (args.length > 2)
+			this.output("cd: too many arguments");
+		else if (args.length == 1 || args[1] == "~")
+			linux.directory = linux.home;
+		else {
+			let path = absPath(linux.directory, args[1]);
+			switch (checkExistence(path)) {
+				case "file":
+					this.output("cd: " + path + ": Not a directory");
+					break;
+				case "directory":
+					linux.directory = path;
+					break;
+				default:
+					this.output("cd: " + path + ": No such file or directory");
+					break;
+			}
+		}
+	}
+}
+
+class Echo extends Executable {
+	constructor() {
+		super("echo");
+	}
+
+	exec(linux, args) {
+		let str = "";
+		for (let i = 1; i < args.length; i++)
+			str += args[i] + " ";
+		this.output(str);
+		return 0;
+	}
+}
+
+class Exit extends Executable {
+	constructor() {
+		super("exit");
+	}
+
+	onExec(linux, options, args) {
+		linux.term.closed = true;
+		linux.term.prompt = () => {};
+		this.clear();
+		return 0;
+	}
+}
+
+let term = new Terminal({cursorBlink: "block", rows: 300});
+let line = "";
+let entries = [];
+let linux = {
+	files: [],
+	directories: [ "/" ],
+	directory: "/",
+	home: "/",
+	executables: [
+		new Help(),
+		new Clear(),
+		new Cd(),
+		new Echo(),
+		new Exit()
+	],
+	term: term
+};
+
+term.open(document.getElementById("terminal"));
+term.setOption("theme", {
+	background: "#000000",
+	foreground: "#ffffff"
+});
+term.prompt = () => {
+	term.write(linux.directory + " $ ");
+	line = "";
+};
+
+function absPath(dir, change) {
+	if (change.startsWith("/"))
+		return change;
+	
+	if (!dir.startsWith("/"))
+		dir = "/" + dir;
+	if (!dir.endsWith("/"))
+		dir += "/";
+	
+	return new URL("https://example.com" + dir + change).pathname;
+}
+
+function checkExistence(path) {
+	for (let i = 0; i < linux.files.length; i++)
+		if (path == linux.files[i])
+			return "file";
+	for (let i = 0; i < linux.directories.length; i++)
+		if (path == linux.directories[i])
+			return "directory";
+	return "not-found";
+}
+
+function parseArgs(cmd) {
+	let args = [];
+	let escaped = false;
+	let quoted = false;
+	let str = "";
+	for (let i = 0; i < cmd.length; i++) {
+		let id = cmd.charCodeAt(i);
+		let ch = cmd.charAt(i);
+		if (quoted || id > 0x20) {
+			if (escaped) {
+				str += ch;
+				escaped = false;
+			} else switch (ch) {
+				case "\\":
+					escaped = true;
+					break;
+				case "\"":
+				case "\'":
+					quoted = !quoted;
+					break;
+				default:
+					str += ch;
+			}
+		} else {
+			escaped = false;
+			if (str.length > 0) {
+				args.push(str);
+				str = "";
+			}
+		}
+	}
+	if (str.length > 0)
+		args.push(str);
+	return {
+		args: args,
+		escaped: escaped,
+		quoted: quoted
+	};
+}
+
+function exec(args) {
+	let cmd = args[0];
+	let executables = linux.executables;
+	for (let i = 0; i < executables.length; i++)
+		if (executables[i].name == cmd)
+			return executables[i].exec(linux, args);
+	return new Executable(cmd).exec(linux, args);
+}
+
+term.closed = false;
+term.prompt();
+term.on("key", function(key, ev) {
+	if (term.closed) {
+		return;
+	}
+
+	switch(ev.keyCode) {
+		case 13: // enter
+			term.write("\r\n");
+			if (line.length > 0) {
+				let args = parseArgs(line);
+				if (args.quoted || args.escaped)
+					line += "\r\n";
+				else {
+					entries.push(line);
+					exec(args.args);
+					term.prompt();
+				}
+			} else term.prompt();
+			break;
+		case 8: // backspace
+			if (line.length > 0) {
+				line = line.slice(0, line.length - 1);
+				term.write("\b \b");
+			}
+			break;
+		case 37:
+		case 38:
+		case 39:
+		case 40:
+			break;
+		default:
+			line += key;
+			term.write(key);
+			break;
+	}
+});
+		</script>
+	</body>
+</html>
