@@ -21,17 +21,28 @@ body {
 	display: block;
 	width: 100%;
 	height: 100%;
+	overflow: hidden;
 	font-family: monospace;
-	overflow-x: hidden;
 	background-color: black;
 }
 
 #terminal {
-	position: relative;
+	position: absolute;
 	display: block;
 	padding: 20px;
-	width: 100% - 20px;
-	height: fit-content;
+	width: 1024px;
+	height: 768px;
+	left: 50%;
+	top: 50%;
+	min-width: 1024px;
+	min-height: 768px;
+	max-width: 1024px;
+	max-height: 768px;
+	margin-left: -512px;
+	margin-top: -384px;
+	border-style: solid;
+	border-color: white;
+	border-width: 2px;
 }
 		</style>
 	</head>
@@ -452,7 +463,7 @@ class Script extends Executable {
 }
 
 let terminal = document.getElementById("terminal");
-let term = new Terminal({cursorBlink: "block", rows: Math.floor(terminal.clientHeight * 1.34), cols: Math.floor(terminal.clientWidth / 9.3)});
+let term = new Terminal({cursorBlink: "block", rows: 45, cols: 110});
 let fitAddon = new FitAddon.FitAddon();
 let searchAddon = new SearchAddon.SearchAddon();
 let webLinksAddon = new WebLinksAddon.WebLinksAddon();
