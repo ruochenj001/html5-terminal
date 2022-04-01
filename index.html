@@ -481,7 +481,7 @@ class Script extends Executable {
 }
 
 let terminal = document.getElementById("terminal");
-let term = new Terminal({cursorBlink: "block", rows: 41, cols: 111});
+let term = new Terminal({cursorBlink: "block", rows: 42, cols: 100});
 let fitAddon = new FitAddon.FitAddon();
 let searchAddon = new SearchAddon.SearchAddon();
 let webLinksAddon = new WebLinksAddon.WebLinksAddon();
@@ -724,22 +724,36 @@ term.on("paste", function(data) {
 
 // correct display density
 
-// function correctDisplay(obj) {
-// 	let width = 1024;
-// 	let height = 768;
-// 	obj.width = width;
-// 	obj.height = height;
-// 	obj.style.width = width + "px";
-// 	obj.style.height = height + "px";
-// }
+function correctDisplay(obj) {
+	let maxWidth = 1024;
+	let maxHeight = 768;
+	let minWidth = 960;
+	let minHeight = 720;
+	if (obj.clientWidth > maxWidth) {
+		obj.width = maxWidth;
+		obj.style.width = maxWidth + "px";
+	}
+	if (obj.clientWidth < minWidth) {
+		obj.width = minWidth;
+		obj.style.width = minWidth + "px";
+	}
+	if (obj.clientHeight > maxHeight) {
+		obj.height = maxHeight;
+		obj.style.height = maxHeight + "px";
+	}
+	if (obj.clientHeight < minHeight) {
+		obj.height = minHeight;
+		obj.style.height = minHeight + "px";
+	}
+}
 
-// let termScreen = document.getElementsByClassName("xterm-screen");
-// for (let i = 0; i < termScreen.length; i++)
-// 	correctDisplay(termScreen[i]);
+let termScreen = document.getElementsByClassName("xterm-screen");
+for (let i = 0; i < termScreen.length; i++)
+	correctDisplay(termScreen[i]);
 
-// let canvas = document.getElementsByTagName("canvas");
-// for (let i = 0; i < canvas.length; i++)
-// 	correctDisplay(canvas[i]);
+let canvas = document.getElementsByTagName("canvas");
+for (let i = 0; i < canvas.length; i++)
+	correctDisplay(canvas[i]);
 
 		</script>
 	</body>
