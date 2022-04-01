@@ -487,7 +487,7 @@ term.setOption("theme", { background: "#000000", foreground: "#ffffff" });
 term.setOption("fontSize", 16);
 term.setOption("fontWeight", "normal");
 term.prompt = (cl = true) => {
-	term.write('\x1b[2K\r');
+	term.write("\x1b[2K\r");
 	term.write(linux.directory + " $ ");
 	if (cl)
 		line = "";
@@ -636,7 +636,7 @@ String.prototype.replaceAt = function(i, ch) {
 	let append = i - this.length;
 	if (append < 0)
 		return this.substring(0, i) + ch + this.substring(i + 1);
-    else if (append == 0)
+	else if (append == 0)
 		return this + ch;
 	else {
 		let str = this;
@@ -658,6 +658,16 @@ String.prototype.insert = function(i, ch) {
 			str += "\u0000";
 		return str + ch;
 	}
+}
+
+// check window
+if (window != window.top) {
+	let allowEmbed = window.allowEmbed;
+	if (!allowEmbed)
+		term.write("Error: Invalid session (embed not allowed)\r\n");
+}
+if (window.innerWidth < 1024 || window.innerHeight < 768) {
+	term.write("Warning: Your screen resolution is not supported, please change your screen resolution or use a different device.\r\n");
 }
 
 term.closed = false;
