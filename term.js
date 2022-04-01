@@ -664,10 +664,10 @@ String.prototype.insert = function(i, ch) {
 if (window != window.top) {
 	let allowEmbed = window.allowEmbed;
 	if (!allowEmbed)
-		term.write("Error: Invalid session (embed not allowed)\r\n");
+		term.write("\033[1;31mError: Invalid session (embed not allowed)\033[0m\r\n");
 }
 if (window.innerWidth < 1024 || window.innerHeight < 768) {
-	term.write("Warning: Your screen resolution is not supported, please change your screen resolution or use a different device.\r\n");
+	term.write("\033[1;33mWarning: Your screen resolution is not supported, please change your screen resolution or use a different device.\033[0m\r\n");
 }
 
 term.closed = false;
