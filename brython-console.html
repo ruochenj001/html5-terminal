@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
-        <script type="text/javascript" src="lib/brython.js"></script>
-        <script type="text/javascript" src="lib/brython_stdlib.js"></script>
-        <title>Brython Console</title>
-        <style type="text/css">
+		<script type="text/javascript" src="lib/brython.js"></script>
+		<script type="text/javascript" src="lib/brython_stdlib.js"></script>
+		<title>Brython Console</title>
+		<style type="text/css">
 * {
 	margin: 0px;
 	padding: 0px;
@@ -22,36 +22,39 @@ body {
 }
 
 #brython {
-    position: absolute;
-    display: block;
-    width: 1024px;
-    height: 768px;
-    min-width: 1024px;
+	position: absolute;
+	display: block;
+	width: 1024px;
+	height: 768px;
+	min-width: 1024px;
 	min-height: 768px;
 	max-width: 1024px;
 	max-height: 768px;
-    left: 50%;
+	left: 50%;
 	top: 50%;
-    margin-left: -512px;
+	margin-left: -512px;
 	margin-top: -384px;
-    font-family: monospace;
+	font-family: monospace;
 	font-size: 14px;
 	font-style: normal;
 	font-weight: 600;
-    background-color: black;
-    color: white;
-    border: none;
-    resize: none;
-    outline: none;
+	background-color: black;
+	color: white;
+	border: none;
+	resize: none;
+	outline: none;
 }
-        </style>
-    </head>
-    <body onload="brython(1)">
-        <textarea id="brython" rows="20" cols="80"></textarea>
-        <script type="text/python">
+		</style>
+	</head>
+	<body onload="brython(1)">
+		<textarea id="brython" rows="20" cols="80"></textarea>
+		<script type="text/python">
 from interpreter import Interpreter;
 
 Interpreter("brython");
-        </script>          
-    </body>
+		</script>
+		<a title="GDPR-compliant Web Analytics" href="https://clicky.com/101360437"><img alt="Clicky" src="//static.getclicky.com/media/links/badge.gif" border="0" /></a>
+		<script async="" src="//static.getclicky.com/101360437.js"></script>
+		<noscript><p><img alt="Clicky" width="1" height="1" src="//in.getclicky.com/101360437ns.gif" /></p></noscript>
+	</body>
 </html>
