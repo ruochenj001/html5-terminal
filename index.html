@@ -32,7 +32,7 @@ body {
 	background-color: black;
 }
 
-#terminal {
+#container {
 	position: absolute;
 	display: block;
 	padding: 20px;
@@ -44,16 +44,30 @@ body {
 	min-height: 768px;
 	max-width: 1024px;
 	max-height: 768px;
-	margin-left: -512px;
-	margin-top: -384px;
+	margin-left: -522px;
+	margin-top: -394px;
 	border-style: solid;
 	border-color: white;
 	border-width: 2px;
 }
+
+#terminal #brython {
+	position: absolute;
+	display: block;
+	width: 1024px;
+	height: 768px;
+	min-width: 1024px;
+	min-height: 768px;
+	max-width: 1024px;
+	max-height: 768px;
+}
 		</style>
 	</head>
 	<body>
-		<div id="terminal"></div>
+		<div id="container">
+			<div id="terminal"></div>
+			<embed id="brython" type="text/plain" src="brython-console.html" width="1024" height="768" style="display: none;" />
+		</div>
 		<script type="text/javascript" src="term.js?version=1.0"></script>
 	</body>
 </html>
