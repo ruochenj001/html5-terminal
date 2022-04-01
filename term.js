@@ -425,6 +425,27 @@ class Script extends Executable {
 	}
 }
 
+class Brython extends Executable {
+	constructor(name) {
+		super(name);
+	}
+
+	onExec(linux, options, args) {
+		for (let i = 0; i < options.length; i++) {
+			this.output(args[0] + ": invalid option " + quote(options[i]));
+			return 1;
+		}
+		if (args.length > 1) {
+			this.output(args[0] + ": load from local file is not currently supported");
+			return 1;
+		}
+		terminal.style.display = "none";
+		let brython = document.getElementById("brython");
+		brython.style.display = "block";
+		return 0;
+	}
+}
+
 let terminal = document.getElementById("terminal");
 let term = new Terminal({cursorBlink: "block", rows: 42, cols: 100});
 let fitAddon = new FitAddon.FitAddon();
@@ -439,17 +460,20 @@ let linux = {
 	directories: [ "/" ],
 	directory: "/",
 	executables: [
+		new Brython("brython"),
 		new Cd(),
 		new Clear(),
 		new Curl(),
-		new Document("document"),
 		new Document("doc"),
+		new Document("document"),
 		new Echo(),
 		new Exit(),
 		new Help(),
 		new Script("javascript"),
 		new Script("js"),
 		new Mkdir(),
+		new Brython("python"),
+		new Brython("python3"),
 		new Script("script")
 	],
 	env: {"HOME": "/"},
