@@ -731,6 +731,8 @@ term.onKey((ev) => {
 		case 40: // arrow down
 			if (current < entries.length) {
 				line = entries[++current];
+				if (line == null)
+					line = "";
 				cursor = line.length;
 				term.syncLine();
 			}
