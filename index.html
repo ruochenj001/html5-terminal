@@ -380,6 +380,7 @@ class Document extends Executable {
 						this.output(args[0] + ": unknown component " + quote(args[1]));
 						return 1;
 				}
+				break;
 			case 3:
 				switch (args[1]) {
 					case "set-head":
@@ -395,10 +396,10 @@ class Document extends Executable {
 						document.getElementsByTagName("head")[0].innerHTML += args[2];
 						break;
 					case "append-body":
-						document.getElementsByTagName("head")[0].innerHTML += args[2];
+						document.getElementsByTagName("body")[0].innerHTML += args[2];
 						break;
 					case "append":
-						document.documentElement.innerHTML = args[2];
+						document.documentElement.innerHTML += args[2];
 						break;
 					case "get-element-by-id":
 					case "get-element":
@@ -430,6 +431,7 @@ class Document extends Executable {
 						this.output(args[0] + ": invalid operation " + quote(args[1]));
 						return 1;
 				}
+				break;
 			default:
 				this.output(args[0] + ": invalid arguments");
 				return 1;
@@ -517,10 +519,26 @@ term.loadAddon(webLinksAddon);
 term.setOption("theme", { background: "#000000", foreground: "#ffffff" });
 term.setOption("fontSize", 16);
 term.setOption("fontWeight", "normal");
-term.prompt = () => {
+term.prompt = (cl = true) => {
+	term.write('\x1b[2K\r');
 	term.write(linux.directory + " $ ");
-	line = "";
+	if (cl)
+		line = "";
 };
+term.syncLine = () => {
+	term.prompt(false);
+	term.write(line);
+	if (cursor != line.length) {
+		for (let i = line.length; i > cursor; i--) {
+			term.write("[D");
+		}
+	}
+};
+term.clear = () => {
+	term.write("\033[2J\033[1;1H");
+	term.prompt();
+};
+
 term.open(terminal);
 
 function isAbsolute(path) {
@@ -661,6 +679,20 @@ String.prototype.replaceAt = function(i, ch) {
 	}
 }
 
+String.prototype.insert = function(i, ch) {
+	let append = i - this.length;
+	if (append < 0)
+		return this.substring(0, i) + ch + this.substring(i);
+	else if (append == 0)
+		return this + ch;
+	else {
+		let str = this;
+		for (let i = 0; i < append; i++)
+			str += "\u0000";
+		return str + ch;
+	}
+}
+
 term.closed = false;
 term.prompt();
 term.on("key", function(key, ev) {
@@ -706,9 +738,8 @@ term.on("key", function(key, ev) {
 			// not supported by now
 			break;
 		default:
-			line = line.replaceAt(cursor, key);
-			term.write(key);
-			cursor++;
+			line = line.insert(cursor++, key);
+			term.syncLine();
 			break;
 	}
 });
