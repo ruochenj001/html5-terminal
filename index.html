@@ -24,6 +24,10 @@ body {
 	height: 100%;
 	overflow: hidden;
 	font-family: monospace;
+	font-size: 14px;
+	font-style: normal;
+	font-weight: 500;
+	font-size-adjust: 1.0;
 	background-color: black;
 }
 
@@ -477,7 +481,7 @@ class Script extends Executable {
 }
 
 let terminal = document.getElementById("terminal");
-let term = new Terminal({cursorBlink: "block", rows: 45, cols: 110});
+let term = new Terminal({cursorBlink: "block", rows: 41, cols: 111});
 let fitAddon = new FitAddon.FitAddon();
 let searchAddon = new SearchAddon.SearchAddon();
 let webLinksAddon = new WebLinksAddon.WebLinksAddon();
@@ -510,10 +514,9 @@ let linux = {
 term.loadAddon(fitAddon);
 term.loadAddon(searchAddon);
 term.loadAddon(webLinksAddon);
-term.setOption("theme", {
-	background: "#000000",
-	foreground: "#ffffff"
-});
+term.setOption("theme", { background: "#000000", foreground: "#ffffff" });
+term.setOption("fontSize", 16);
+term.setOption("fontWeight", "normal");
 term.prompt = () => {
 	term.write(linux.directory + " $ ");
 	line = "";
@@ -718,6 +721,26 @@ term.on("paste", function(data) {
 	term.write(data);
 	cursor += data.length;
 });
+
+// correct display density
+
+// function correctDisplay(obj) {
+// 	let width = 1024;
+// 	let height = 768;
+// 	obj.width = width;
+// 	obj.height = height;
+// 	obj.style.width = width + "px";
+// 	obj.style.height = height + "px";
+// }
+
+// let termScreen = document.getElementsByClassName("xterm-screen");
+// for (let i = 0; i < termScreen.length; i++)
+// 	correctDisplay(termScreen[i]);
+
+// let canvas = document.getElementsByTagName("canvas");
+// for (let i = 0; i < canvas.length; i++)
+// 	correctDisplay(canvas[i]);
+
 		</script>
 	</body>
 </html>
