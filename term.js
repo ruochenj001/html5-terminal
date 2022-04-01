@@ -447,14 +447,14 @@ class Brython extends Executable {
 }
 
 let terminal = document.getElementById("terminal");
-let term = new Terminal({cursorBlink: "block", rows: 42, cols: 100});
+let term = new Terminal({cursorBlink: "block"});
 let fitAddon = new FitAddon.FitAddon();
 let searchAddon = new SearchAddon.SearchAddon();
 let webLinksAddon = new WebLinksAddon.WebLinksAddon();
 let cursor = 0;
 let line = "";
 let entries = [];
-let shellLevel = 0;
+let current = 0;
 let linux = {
 	files: [],
 	directories: [ "/" ],
@@ -486,14 +486,15 @@ term.loadAddon(webLinksAddon);
 term.setOption("theme", { background: "#000000", foreground: "#ffffff" });
 term.setOption("fontSize", 16);
 term.setOption("fontWeight", "normal");
-term.prompt = (cl = true) => {
+term.prompt = () => { throw null; };
+term._prompt = (cl = true) => {
 	term.write("\x1b[2K\r");
 	term.write(linux.directory + " $ ");
 	if (cl)
 		line = "";
 };
 term.syncLine = () => {
-	term.prompt(false);
+	term._prompt(false);
 	term.write(line);
 	if (cursor != line.length) {
 		for (let i = line.length; i > cursor; i--) {
@@ -503,10 +504,11 @@ term.syncLine = () => {
 };
 term.clear = () => {
 	term.write("\033[2J\033[1;1H");
-	term.prompt();
+	term._prompt();
 };
 
 term.open(terminal);
+fitAddon.fit();
 
 function isAbsolute(path) {
 	return path.startsWith("/") &&
@@ -660,6 +662,10 @@ String.prototype.insert = function(i, ch) {
 	}
 }
 
+String.prototype.removeAt = function(i) {
+	return this.slice(0, i) + this.slice(i + 1);
+}
+
 // check window
 if (window != window.top) {
 	let allowEmbed = window.allowEmbed;
@@ -671,12 +677,17 @@ if (window.innerWidth < 1024 || window.innerHeight < 768) {
 }
 
 term.closed = false;
-term.prompt();
-term.on("key", function(key, ev) {
+term.input = false;
+term._prompt();
+term.onKey((ev) => {
 	if (term.closed)
 		return;
 
-	switch(ev.keyCode) {
+	term.input = true;
+	let code  = ev.domEvent.keyCode;
+	let key = ev.key;
+
+	switch(code) {
 		case 13: // enter
 			term.write("\r\n");
 			if (line.length > 0) {
@@ -685,17 +696,17 @@ term.on("key", function(key, ev) {
 					line += "\r\n";
 				else {
 					entries.push(line);
+					current = entries.length;
 					linux.env["?"] = exec(args.args);
-					term.prompt();
+					term._prompt();
 				}
-			} else term.prompt();
+			} else term._prompt();
 			cursor = 0;
 			break;
 		case 8: // backspace
 			if (line.length > 0) {
-				line = line.slice(0, line.length - 1);
-				term.write("\b \b");
-				cursor--;
+				line = line.removeAt(--cursor);
+				term.syncLine();
 			}
 			break;
 		case 37: // arrow left
@@ -711,18 +722,30 @@ term.on("key", function(key, ev) {
 			}
 			break;
 		case 38: // arrow up
+			if (current > 0) {
+				line = entries[--current];
+				cursor = line.length;
+				term.syncLine();
+			}
+			break;
 		case 40: // arrow down
-			// not supported by now
+			if (current < entries.length) {
+				line = entries[++current];
+				cursor = line.length;
+				term.syncLine();
+			}
 			break;
 		default:
 			line = line.insert(cursor++, key);
 			term.syncLine();
 			break;
 	}
+
+	setTimeout(() => {term.input = false}, 15);
 });
 
-term.on("paste", function(data) {
-	if (term.closed)
+term.onData((data) => {
+	if (term.closed || term.input)
 		return;
 
 	line += data;
