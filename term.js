@@ -1,6 +1,7 @@
 class Executable {
-	constructor(name) {
+	constructor(name, description = "") {
 		this.name = name;
+		this.desc = description;
 	}
 
 	exec(linux, args) {
@@ -46,10 +47,17 @@ class Executable {
 				}
 			} else {
 				this.output(this.name + ": command not found");
-				this.output("Try 'help' for a list of available command.");
+				this.output("Try 'help' for a list of available commands.");
 				return 127;
 			}
 		}
+	}
+
+	description() {
+		let desc = this.desc;
+		if (desc == null || desc == "")
+			desc = "no description available";
+		return desc;
 	}
 
 	onHelp(linux) {
@@ -57,7 +65,7 @@ class Executable {
 		return 0;
 	}
 
-	output(msg, newLine = true) {
+	output(msg = "", newLine = true) {
 		if (newLine)
 			msg += "\r\n";
 		term.write(msg);
@@ -70,18 +78,20 @@ class Executable {
 
 class Help extends Executable {
 	constructor() {
-		super("help");
+		super("help", "get available commands");
 	}
 
 	onExec(linux, options, args) {
 		if (args.length == 1) {
 			this.output("Available commands: ");
-			let str = "\t";
+			let str = "";
 			let cmds = linux.executables;
-			for (let i = 0; i < cmds.length; i++)
-				str += cmds[i].name + " ";
+			for (let i = 0; i < cmds.length; i++) {
+				let cmd = cmds[i];
+				str += "\t" + cmd.name + ": " + cmd.description() + "\r\n";
+			}
 			this.output(str);
-			this.output("\nTry 'help + command' for more detailed informations.");
+			this.output("Try 'help + command' for more detailed informations.");
 		} else if (args.length == 2)
 			getCommandByName(args[1]).onHelp(linux);
 		else {
@@ -94,7 +104,7 @@ class Help extends Executable {
 
 class Clear extends Executable {
 	constructor() {
-		super("clear");
+		super("clear", "clear terminal screen");
 	}
 
 	onExec(linux, options, args) {
@@ -109,7 +119,7 @@ class Clear extends Executable {
 
 class Cd extends Executable {
 	constructor() {
-		super("cd");
+		super("cd", "change working directory");
 	}
 
 	onExec(linux, options, args) {
@@ -139,7 +149,7 @@ class Cd extends Executable {
 
 class Echo extends Executable {
 	constructor() {
-		super("echo");
+		super("echo", "print message");
 	}
 
 	exec(linux, args) {
@@ -153,7 +163,7 @@ class Echo extends Executable {
 
 class Exit extends Executable {
 	constructor() {
-		super("exit");
+		super("exit", "exit current session");
 	}
 
 	onExec(linux, options, args) {
@@ -217,7 +227,7 @@ class Curl extends Executable {
 
 class Mkdir extends Executable {
 	constructor() {
-		super("mkdir");
+		super("mkdir", "create directory");
 	}
 
 	onExec(linux, options, args) {
@@ -307,12 +317,14 @@ class Document extends Executable {
 			this.output(args[0] + ": invalid option " + quote(options[i]));
 			return 1;
 		}
+		let cmd = args[0];
 		switch (args.length) {
 			case 1:
 				this.output(document.documentElement.innerHTML);
 				break;
 			case 2:
-				switch (args[1]) {
+				let component = args[1];
+				switch (component) {
 					case "head":
 						this.output(document.getElementsByTagName("head")[0].innerHTML);
 						break;
@@ -320,64 +332,69 @@ class Document extends Executable {
 						this.output(document.getElementsByTagName("body")[0].innerHTML);
 						break;
 					default:
-						this.output(args[0] + ": unknown component " + quote(args[1]));
+						this.output(cmd + ": unknown component " + component);
 						return 1;
 				}
 				break;
-			case 3:
-				switch (args[1]) {
+			default:
+				let operation = args[1];
+				let value = "";
+				for (let i = 2; i < args.length; i++)
+					value += args[i] + " ";
+				value = value.substring(0, value.length - 1);
+				switch (operation) {
 					case "set-head":
-						document.getElementsByTagName("head")[0].innerHTML = args[2];
+						document.getElementsByTagName("head")[0].innerHTML = value;
 						break;
 					case "set-body":
-						document.getElementsByTagName("body")[0].innerHTML = args[2];
+						document.getElementsByTagName("body")[0].innerHTML = value;
+						break;
+					case "write":
+						document.write(value);
 						break;
 					case "set":
-						document.documentElement.innerHTML = args[2];
+						document.documentElement.innerHTML = value;
 						break;
 					case "append-head":
-						document.getElementsByTagName("head")[0].innerHTML += args[2];
+						document.getElementsByTagName("head")[0].innerHTML += value;
 						break;
 					case "append-body":
-						document.getElementsByTagName("body")[0].innerHTML += args[2];
+						document.getElementsByTagName("body")[0].innerHTML += value;
 						break;
 					case "append":
-						document.documentElement.innerHTML += args[2];
+						document.documentElement.innerHTML += value;
 						break;
 					case "get-element-by-id":
 					case "get-element":
-						let elem = document.getElementById(args[2]);
+						let elem = document.getElementById(value);
 						if (elem == null) {
-							this.output(args[0] + ": cannot find element with id " + quote(args[2]));
+							this.output(cmd + ": cannot find element with id " + quote(value));
 							return 1;
 						}
 						this.output(elem.innerHTML);
 						break;
 					case "get-element-by-class":
 					case "get-element-by-class-name":
-						let element = document.getElementsByClassName(args[2]);
+						let element = document.getElementsByClassName(value);
 						if (element.length == 0) {
-							this.output(args[0] + ": cannot find element with class name " + quote(args[2]));
+							this.output(cmd + ": cannot find element with class name " + quote(value));
 							return 1;
 						}
 						this.output(element.innerHTML);
 						break;
 					case "get-elements-by-class":
 					case "get-elements-by-class-name":
-						let elements = document.getElementsByClassName(args[2]);
+						let elements = document.getElementsByClassName(value);
 						for (let i = 0; i < elements.length; i++) {
 							this.output("Element " + i + ":");
 							this.output(elements[i].innerHTML);
 						}
 						break;
 					default:
-						this.output(args[0] + ": invalid operation " + quote(args[1]));
+						this.output(cmd + ": invalid operation " + quote(operation));
 						return 1;
 				}
 				break;
-			default:
-				this.output(args[0] + ": invalid arguments");
-				return 1;
 		}
 		return 0;
 	}
@@ -385,7 +402,7 @@ class Document extends Executable {
 
 class Script extends Executable {
 	constructor(name) {
-		super(name);
+		super(name, "run JavaScript code");
 	}
 
 	onExec(linux, options, args) {
@@ -427,7 +444,7 @@ class Script extends Executable {
 
 class Brython extends Executable {
 	constructor(name) {
-		super(name);
+		super(name, "switch to Brython console");
 	}
 
 	onExec(linux, options, args) {
@@ -673,6 +690,7 @@ if (window != window.top) {
 		term.write("\033[1;31mError: Invalid session (embed not allowed)\033[0m\r\n");
 }
 if (window.innerWidth < 1024 || window.innerHeight < 768) {
+	alert("WARNING: Your screen resolution is not supported (< 1024x768), please change your screen resolution or use a different device.");
 	term.write("\033[1;33mWarning: Your screen resolution is not supported, please change your screen resolution or use a different device.\033[0m\r\n");
 }
 
@@ -706,6 +724,18 @@ term.onKey((ev) => {
 		case 8: // backspace
 			if (line.length > 0) {
 				line = line.removeAt(--cursor);
+				term.syncLine();
+			}
+			break;
+		case 35: // end
+			if (cursor != line.length) {
+				cursor = line.length;
+				term.syncLine();
+			}
+			break;
+		case 36: // home
+			if (cursor != 0) {
+				cursor = 0;
 				term.syncLine();
 			}
 			break;
