@@ -4,12 +4,14 @@
 	<head>
 		<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
-		<link rel="stylesheet" type="text/css" href="node_modules/xterm/css/xterm.css" />
-		<script type="text/javascript" src="node_modules/xterm-addon-attach/lib/xterm-addon-attach.js"></script>
-		<script type="text/javascript" src="node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
-		<script type="text/javascript" src="node_modules/xterm-addon-search/lib/xterm-addon-search.js"></script>
-		<script type="text/javascript" src="node_modules/xterm-addon-web-links/lib/xterm-addon-web-links.js"></script>
-		<script type="text/javascript" src="node_modules/xterm/lib/xterm.js"></script>
+		<link rel="stylesheet" type="text/css" href="lib/xterm.css" />
+		<script type="text/javascript" src="lib/xterm-addon-attach.js"></script>
+		<script type="text/javascript" src="lib/xterm-addon-fit.js"></script>
+		<script type="text/javascript" src="lib/xterm-addon-search.js"></script>
+		<script type="text/javascript" src="lib/xterm-addon-web-links.js"></script>
+		<script type="text/javascript" src="lib/xterm.js"></script>
+		<script type="text/javascript" src="lib/brython.js"></script>
+		<script type="text/javascript" src="lib/brython_stdlib.js"></script>
 		<title>Terminal</title>
 		<style type="text/css">
 * {
@@ -27,9 +29,7 @@ body {
 	overflow: hidden;
 	font-family: monospace;
 	font-size: 14px;
-	font-style: normal;
 	font-weight: 500;
-	font-size-adjust: 1.0;
 	background-color: black;
 }
 
@@ -52,7 +52,7 @@ body {
 	border-width: 2px;
 }
 
-#terminal #brython {
+#terminal, #brython {
 	position: absolute;
 	display: block;
 	width: 1024px;
@@ -62,13 +62,34 @@ body {
 	max-width: 1024px;
 	max-height: 768px;
 }
+
+#brython-console {
+	position: absolute;
+	display: block;
+	width: 100%;
+	height: 100%;
+	font-family: monospace;
+	font-size: 14px;
+	font-weight: 600;
+	background-color: black;
+	color: white;
+	border: none;
+	resize: none;
+	outline: none;
+}
 		</style>
 	</head>
-	<body>
+	<body onload="brython(1)">
 		<div id="container">
 			<div id="terminal"></div>
-			<embed id="brython" type="text/plain" src="brython-console.html?version=1.0" width="1024" height="768" style="display: none;" />
+			<div id="brython" style="display: none;">
+				<textarea id="brython-console" rows="20" cols="80"></textarea>
+			</div>
 		</div>
 		<script type="text/javascript" src="term.js?version=0.1"></script>
+		<script type="text/python">
+from interpreter import Interpreter;			
+Interpreter("brython-console");
+		</script>
 	</body>
 </html>
