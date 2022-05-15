@@ -1,3 +1,5 @@
+(() => {
+
 class Executable {
 	constructor(name, description = "") {
 		this.name = name;
@@ -817,3 +819,5 @@ for (let i = 0; i < termScreen.length; i++)
 let canvas = document.getElementsByTagName("canvas");
 for (let i = 0; i < canvas.length; i++)
 	correctDisplay(canvas[i]);
+
+})();
