@@ -1,3 +1,5 @@
+//"use strict";
+
 (() => {
 
 class Executable {
@@ -34,36 +36,23 @@ class Executable {
 			return 0;
 		} else {
 			// default output
-			if (cmd.includes("/") || cmd == ".." || cmd == ".") {
-				let path = absPath(linux.directory, cmd);
-				switch (checkExistence(path)) {
-					case "directory":
-						term.write(cmd + ": Is a directory\r\n");
-						return 126;
-					case "file":
-						term.write(cmd + ": Permission denied\r\n");
-						return 126;
-					default:
-						term.write(cmd + ": No such file or directory\r\n");
-						return 127;
-				}
-			} else {
-				this.output(this.name + ": command not found");
-				this.output("Try 'help' for a list of available commands.");
-				return 127;
-			}
+			this.output(this.name + ": command not found");
+			this.output("Use command 'help' for a list of available commands.");
+			return 127;
 		}
 	}
 
 	description() {
 		let desc = this.desc;
-		if (desc == null || desc == "")
-			desc = "no description available";
+		if (desc == null || desc.length == 0)
+			// default message
+			desc = "No description available for this command";
 		return desc;
 	}
 
 	onHelp(linux) {
-		this.output(this.name + ": no help available");
+		// default output
+		this.output("This command does not provide any help messages.");
 		return 0;
 	}
 
@@ -114,51 +103,7 @@ class Clear extends Executable {
 			this.output("clear: invalid option " + quote(options[i]));
 			return 1;
 		}
-		super.clear();
-		return 0;
-	}
-}
-
-class Cd extends Executable {
-	constructor() {
-		super("cd", "change working directory");
-	}
-
-	onExec(linux, options, args) {
-		for (let i = 0; i < options.length; i++) {
-			this.output("cd: invalid option " + options[i]);
-			return 1;
-		}
-		if (args.length > 2) {
-			this.output("cd: too many arguments");
-			return 1;
-		}
-		let path = (args.length == 1 ? linux.env.HOME : absPath(linux.directory, args[1]));
-		switch (checkExistence(path)) {
-			case "file":
-				this.output("cd: " + path + ": Not a directory");
-				return 1;
-			case "directory":
-				linux.directory = path;
-				break;
-			default:
-				this.output("cd: " + path + ": No such file or directory");
-				return 1;
-		}
-		return 0;
-	}
-}
-
-class Echo extends Executable {
-	constructor() {
-		super("echo", "print message");
-	}
-
-	exec(linux, args) {
-		let str = "";
-		for (let i = 1; i < args.length; i++)
-			str += args[i] + " ";
-		this.output(str);
+		this.clear();
 		return 0;
 	}
 }
@@ -177,131 +122,6 @@ class Exit extends Executable {
 		linux.term.prompt = () => {};
 		this.clear();
 		return 0;
-	}
-}
-
-class Curl extends Executable {
-	constructor() {
-		super("curl");
-	}
-
-	checkUrl(url) {
-		try {
-			return new URL(url).href;
-		} catch(err) {
-			return null;
-		}
-	}
-
-	onExec(linux, options, args) {
-		for (let i = 0; i < options.length; i++) {
-			this.output("curl: invalid option " + quote(options[i]));
-			return 1;
-		}
-		if (args.length == 1) {
-			this.output("curl: no URL specified!");
-			return 1;
-		}
-		for (let i = 1; i < args.length; i++) {
-			let url = this.checkUrl(args[i]);
-			if (url == null) {
-				this.output("curl: invalid URL: " + quote(args[i]));
-				return 1;
-			}
-			let embed = document.createElement("object");
-			let body = document.getElementsByTagName("body")[0];
-			embed.type = "text/plain";
-			embed.width = 800;
-			embed.height = 600;
-			embed.data = url;
-			embed.onload = (e) => {
-				let doc = embed.contentDocument;
-				if (doc == null)
-					doc = embed.contentWindow.document;
-				this.output(doc.documentElement.innerHTML);
-				body.removeChild(embed);
-			};
-			body.appendChild(embed);
-		}
-		return 0;
-	}
-}
-
-class Mkdir extends Executable {
-	constructor() {
-		super("mkdir", "create directory");
-	}
-
-	onExec(linux, options, args) {
-		if (args.length == 1) {
-			this.output("mkdir: missing operand");
-			return 1;
-		}
-		let parent = false;
-		let verbose = false;
-		for (let i = 0; i < options.length; i++) {
-			switch(options[i]) {
-				case "p":
-				case "parent":
-					parent = true;
-					break;
-				case "v":
-				case "verbose":
-					verbose = true;
-					break;
-				default:
-					this.output("mkdir: invalid option " + quote(options[i]));
-					return 1;
-			}
-		}
-		let code = 0;
-		for (let i = 1; i < args.length; i++) {
-			let obj = args[i];
-			let path = absPath(linux.directory, obj);
-			if (checkExistence(path) != "not-found") {
-				this.output("mkdir: cannot create directory " + quote(obj) + ": File exists");
-				code = 1;
-			} else {
-				if (parent) {
-					// create parent directories
-					for (let parent = parentPath(path); parent != "/"; parent = parentPath(parent)) {
-						switch (checkExistence(parent)) {
-							case "file":
-								this.output("mkdir: cannot create directory " + quote(parent) + ": Not a directory");
-								code = 1;
-								break;
-							case "not-found":
-								linux.directories.push(parent); // create directory
-								if (verbose)
-									this.output("mkdir: created directory " + quote(parent));
-								break;
-						}
-					}
-					// create target directory
-					linux.directories.push(path);
-					if (verbose)
-						this.output("mkdir: created directory " + quote(obj));
-				} else {
-					let parent = parentPath(path);
-					switch (checkExistence(parent)) {
-						case "file":
-							this.output("mkdir: cannot create directory " + quote(obj) + ": Not a directory");
-							code = 1;
-							break;
-						case "not-found":
-							this.output("mkdir: cannot create directory " + quote(obj) + ": No such file or directory");
-							code = 1;
-							break;
-						default:
-							linux.directories.push(path);
-							if (verbose)
-								this.output("mkdir: created directory " + quote(obj));
-							break;
-					}
-				}
-			}
-		}
-		return code;
 	}
 }
 
@@ -455,7 +275,7 @@ class Brython extends Executable {
 			return 1;
 		}
 		if (args.length > 1) {
-			this.output(args[0] + ": load from local file is not currently supported");
+			this.output(args[0] + ": the operation is not supported");
 			return 1;
 		}
 		terminal.style.display = "none";
@@ -475,22 +295,15 @@ let line = "";
 let entries = [];
 let current = 0;
 let linux = {
-	files: [],
-	directories: [ "/" ],
-	directory: "/",
 	executables: [
 		new Brython("brython"),
-		new Cd(),
 		new Clear(),
-		new Curl(),
 		new Document("doc"),
 		new Document("document"),
-		new Echo(),
 		new Exit(),
 		new Help(),
 		new Script("javascript"),
 		new Script("js"),
-		new Mkdir(),
 		new Brython("python"),
 		new Brython("python3"),
 		new Script("script")
@@ -508,7 +321,7 @@ term.setOption("fontWeight", "normal");
 term.prompt = () => { throw null; };
 term._prompt = (cl = true) => {
 	term.write("\x1b[2K\r");
-	term.write(linux.directory + " $ ");
+	term.write("\033[1;33mWebShell\033[0m $ ");
 	if (cl)
 		line = "";
 };
@@ -529,40 +342,6 @@ term.clear = () => {
 term.open(terminal);
 fitAddon.fit();
 
-function isAbsolute(path) {
-	return path.startsWith("/") &&
-		!path.includes("/./") &&
-		!path.includes("/../") &&
-		!path.endsWith(".") &&
-		!path.endsWith("..")
-}
-
-function absPath(dir, change) {
-	if (isAbsolute(change))
-		return change;
-	
-	if (!dir.startsWith("/"))
-		dir = "/" + dir;
-	if (!dir.endsWith("/"))
-		dir += "/";
-	
-	return new URL("https://example.com" + dir + change).pathname;
-}
-
-function parentPath(path) {
-	return absPath(path, "..");
-}
-
-function checkExistence(path) {
-	for (let i = 0; i < linux.files.length; i++)
-		if (path == linux.files[i])
-			return "file";
-	for (let i = 0; i < linux.directories.length; i++)
-		if (path == linux.directories[i])
-			return "directory";
-	return "not-found";
-}
-
 function quote(str) {
 	return "\'" + str + "\'";
 }
@@ -579,16 +358,13 @@ function parseArgs(cmd) {
 	let escaped = false;
 	let quoted = false;
 	let envVar = false;
-	let home = false;
 	let str = "";
+
 	for (let i = 0; i < cmd.length; i++) {
 		let id = cmd.charCodeAt(i);
 		let ch = cmd.charAt(i);
+
 		if (quoted || id > 0x20) {
-			if (home) {
-				str += "~";
-				home = false;
-			}
 			if (escaped) {
 				str += ch;
 				escaped = false;
@@ -604,9 +380,7 @@ function parseArgs(cmd) {
 					envVar = true;
 					break;
 				case "~":
-					if (!quoted && !home)
-						home = true;
-					else str += "~";
+					str += "~";
 					break;
 				default:
 					str += ch;
@@ -619,26 +393,26 @@ function parseArgs(cmd) {
 				str = "";
 			} else if (envVar)
 				args.push("$");
-			else if (home)
-				args.push(linux.env.HOME);
+
 			escaped = false;
 			envVar = false;
 			home = false;
 		}
 	}
+
+	// end of line
 	if (str.length > 0) {
 		if (envVar)
 			str = getEnv(str);
 		args.push(str);
 	} else if (envVar)
 		args.push("$");
-	else if (home)
-		args.push(linux.env.HOME);
-	return {
-		args: args,
-		escaped: escaped,
-		quoted: quoted
-	};
+	else if (quoted)
+		args.push("\"");
+	else if (escaped)
+		args.push("\\");
+
+	return args;
 }
 
 function getCommandByName(name) {
@@ -685,17 +459,6 @@ String.prototype.removeAt = function(i) {
 	return this.slice(0, i) + this.slice(i + 1);
 }
 
-// check window
-if (window != window.top) {
-	let allowEmbed = window.allowEmbed;
-	if (!allowEmbed)
-		term.write("\033[1;31mError: Invalid session (embed not allowed)\033[0m\r\n");
-}
-if (window.innerWidth < 1024 || window.innerHeight < 768) {
-	alert("WARNING: Your screen resolution is not supported (< 1024x768), please change your screen resolution or use a different device.");
-	term.write("\033[1;33mWarning: Your screen resolution is not supported, please change your screen resolution or use a different device.\033[0m\r\n");
-}
-
 term.closed = false;
 term.input = false;
 term._prompt();
@@ -712,14 +475,10 @@ term.onKey((ev) => {
 			term.write("\r\n");
 			if (line.length > 0) {
 				let args = parseArgs(line);
-				if (args.quoted || args.escaped)
-					line += "\r\n";
-				else {
-					entries.push(line);
-					current = entries.length;
-					linux.env["?"] = exec(args.args);
-					term._prompt();
-				}
+				entries.push(line);
+				current = entries.length;
+				linux.env["?"] = exec(args);
+				term._prompt();
 			} else term._prompt();
 			cursor = 0;
 			break;
